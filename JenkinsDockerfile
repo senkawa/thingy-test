@@ -1,0 +1,20 @@
+FROM jenkins/jenkins:latest
+
+USER root
+RUN apt-get update && apt-get install -y lsb-release ca-certificates apt-transport-https
+
+RUN curl -fsSLo /usr/share/keyrings/docker-archive-keyring.asc \
+    https://download.docker.com/linux/debian/gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) \
+    signed-by=/usr/share/keyrings/docker-archive-keyring.asc] \
+    https://download.docker.com/linux/debian \
+    $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+RUN apt-get update && apt-get install -y docker-ce-cli
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
+RUN jenkins-plugin-cli --plugins "dark-theme scmskip sonar warnings-ng docker-workflow dependency-check-jenkins-plugin ansicolor"
+
+USER jenkins
+
+# Add GitHub's host keys
+RUN mkdir -p /var/jenkins_home/.ssh && ssh-keyscan github.com >> /var/jenkins_home/.ssh/known_hosts

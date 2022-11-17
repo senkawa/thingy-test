@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+
+  jenkins:
+    container_name: ci-jenkins
+    build:
+      context: ./
+      dockerfile: JenkinsDockerfile
+    restart: unless-stopped
+    networks:
+      - docker
+    ports:
+      - 8080:8080
+      - 50000:50000
+    tty: true
+    volumes:
+      - ./volumes/jenkins-data:/var/jenkins_home
+      - ./volumes/jenkins-docker-certs:/certs/client:ro
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=1
+
+  dind:
+    container_name: ci-dind
+    image: docker:dind
+    privileged: true
+    restart: always
+    networks:
+      docker:
+        aliases:
+          - docker
+    ports:
+      - 2376:2376
+    tty: true
+    volumes:
+      - ./volumes/jenkins-data:/var/jenkins_home
+      - ./volumes/jenkins-docker-certs:/certs/client
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+
+  sonarqube:
+    container_name: ci-sonarqube
+    image: sonarqube:community
+    user: 1000:1000
+    environment:
+      SONAR_TELEMETRY_ENABLE: false
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: true
+    volumes:
+      - ./volumes/sonarqube-data:/opt/sonarqube/data
+      - ./volumes/sonarqube-extensions:/opt/sonarqube/extensions
+      - ./volumes/sonarqube-logs:/opt/sonarqube/logs
+    networks:
+      - docker
+    ports:
+      - "9000:9000"
+
+networks:
+  docker:
