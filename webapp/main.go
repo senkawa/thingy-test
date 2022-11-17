@@ -4,6 +4,7 @@ import (
 	"embed"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,6 +19,8 @@ var viewsfs embed.FS
 //go:embed 10-million-password-list-top-1000.txt
 var passwordFile string
 var passwordList = strings.Split(passwordFile, "\n")
+
+var listenOn = os.Getenv("LISTEN_ON")
 
 // verifyPassword checks if the password passes OWASP Top 10 proactive controls c6: implement digital identity
 func verifyPassword(password string) error {
@@ -102,7 +105,11 @@ func runApp() {
 		return c.Redirect("/")
 	})
 
-	app.Listen(":3000")
+	if listenOn == "" {
+		listenOn = ":3000"
+	}
+
+	app.Listen(listenOn)
 }
 
 func main() {

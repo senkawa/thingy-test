@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  app:
+    ports:
+      - "80:80"
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    image: app
+    container_name: app
+    environment:
+      LISTEN_ON: ":80"
+    networks:
+      - docker
+
 
   jenkins:
     container_name: ci-jenkins
