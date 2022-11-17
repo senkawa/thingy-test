@@ -16,7 +16,7 @@ pipeline {
       steps {
         script {
           sh "docker network create ${NETWORK} || true"
-          CHROME = docker.image('selenium/standalone-chrome:106.0').run("--name ${CHROME_CONTAINER} --network ${NETWORK} --shm-size=2g")
+          CHROME = docker.image('seleniarm/standalone-chromium:latest').run("--name ${CHROME_CONTAINER} --network ${NETWORK} --shm-size=2g")
         }
       }
     }
@@ -30,7 +30,22 @@ pipeline {
       }
 
       steps {
-        sh 'go test'
+        dir('webapp') {
+            sh 'go test'
+        }
+      }
+    }
+
+    stage('Linters') {
+      agent any
+      steps {
+        script {
+          // sonarqube depends on the previous stage workspace, so these two steps cannot be run in parallel
+          def scanner = tool 'sonarqube'
+          withSonarQubeEnv('sonarqube') {
+            sh "${scanner}/bin/sonar-scanner -Dsonar.projectKey=practical -Dsonar.source=webapp"
+          }
+        }
       }
     }
 
